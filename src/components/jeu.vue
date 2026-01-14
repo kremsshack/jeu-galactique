@@ -1,21 +1,21 @@
 <template>
-  <div class="main-wrapper">
-    <div class="game-layout">
-      <div class="game-arena-container">
+  <main class="main-wrapper">
+    <article class="game-layout">
+      <section class="game-arena-container">
         <div class="stars"></div>
         <div class="stars2"></div>
         <div class="ground-limit"></div>
 
-        <div v-if="!gameStarted && !gameOver" class="arena-modal">
+        <section v-if="!gameStarted && !gameOver" class="arena-modal">
           <h1>🚀 Clavier Galactique</h1>
           <p>
             Utilise ton clavier physique pour détruire les lettres avant
             qu'elles ne touchent le sol !
           </p>
           <button class="btn-start" @click="startGame">Décoller</button>
-        </div>
+        </section>
 
-        <div v-if="gameOver" class="arena-modal">
+        <section v-if="gameOver" class="arena-modal">
           <h1>💥 Mission Échouée</h1>
           <p class="final-stats">
             Score Final : <strong>{{ score }}</strong>
@@ -24,77 +24,57 @@
             Meilleur Combo : <strong>{{ maxStreak }}</strong>
           </p>
           <button class="btn-restart" @click="resetGame">Réessayer</button>
-        </div>
+        </section>
 
-        <div class="game-area">
+        <section class="game-area" aria-label="Zone de jeu">
           <div
             v-for="a in asteroids"
             :key="a.id"
             class="asteroid"
             :class="{ destroying: a.destroying }"
             :style="{ left: a.x + '%', top: a.y + '%' }"
+            role="img"
+            :aria-label="`Astéroïde lettre ${a.letter}`"
           >
             {{ a.letter }}
           </div>
-        </div>
+        </section>
 
-        <!-- Indicateur de feedback visuel pour les erreurs -->
         <transition name="shake">
-          <div v-if="showMissIndicator" class="miss-indicator">❌ Raté !</div>
+          <aside v-if="showMissIndicator" class="miss-indicator" role="alert">
+            ❌ Raté !
+          </aside>
         </transition>
-      </div>
+      </section>
 
-      <div class="side-panel">
+      <aside class="side-panel" aria-label="Tableau de bord">
         <h2>Tableau de Bord</h2>
 
-        <div class="panel-stat score-box">
-          <span class="label">SCORE</span>
-          <span class="value">{{ score }}</span>
-        </div>
+        <section class="panel-stat score-box">
+          <p class="label">SCORE</p>
+          <p class="value">{{ score }}</p>
+        </section>
 
-        <div class="panel-stat">
-          <span class="label">NIVEAU</span>
-          <span class="value">{{ difficulty }}</span>
-        </div>
-
-        <div
+        <section
           class="panel-stat combo-box"
           :class="{ hot: streak >= 5, mega: streak >= 10 }"
         >
-          <span class="label">COMBO 🔥</span>
-          <span class="value">{{ streak }}</span>
-          <span v-if="streak >= 5" class="combo-text">{{
-            getComboText()
-          }}</span>
-        </div>
+          <p class="label">COMBO 🔥</p>
+          <p class="value">{{ streak }}</p>
+          <p v-if="streak >= 5" class="combo-text">{{ getComboText() }}</p>
+        </section>
 
-        <div class="panel-stat lives-box">
-          <span class="label">BOUCLIERS</span>
-          <div class="lives-icons">
-            <span v-for="i in maxLives" :key="i" class="life-icon">
+        <section class="panel-stat lives-box">
+          <p class="label">BOUCLIERS</p>
+          <ul class="lives-icons">
+            <li v-for="i in maxLives" :key="i" class="life-icon">
               {{ i <= lives ? "🛡️" : "💥" }}
-            </span>
-          </div>
-        </div>
-
-        <div class="panel-stat stats-box">
-          <div class="mini-stat">
-            <span class="mini-label">Précision</span>
-            <span class="mini-value">{{ accuracy }}%</span>
-          </div>
-          <div class="mini-stat">
-            <span class="mini-label">Détruits</span>
-            <span class="mini-value">{{ destroyed }}</span>
-          </div>
-        </div>
-
-        <div class="controls-info">
-          <p>⌨️ Jouable uniquement au clavier</p>
-          <p class="tip">💡 Astuce : Vise les lettres les plus basses !</p>
-        </div>
-      </div>
-    </div>
-  </div>
+            </li>
+          </ul>
+        </section>
+      </aside>
+    </article>
+  </main>
 </template>
 
 <script setup>
@@ -119,7 +99,7 @@ const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const GROUND_LIMIT_Y = 88;
 const BASE_SPAWN_INTERVAL = 2000;
 const MIN_SPAWN_INTERVAL = 800;
-const DIFFICULTY_INTERVAL = 15000; // Temps en ms avant augmentation de difficulté
+const DIFFICULTY_INTERVAL = 15000;
 
 let id = 0;
 let lastSpawn = 0;
@@ -141,7 +121,7 @@ const spawnAsteroid = () => {
     letter: letters[Math.floor(Math.random() * letters.length)],
     x: Math.random() * 80 + 10,
     y: -15,
-    speed: 0.2 + difficulty.value * 0.08,
+    speed: 0.5 + difficulty.value * 0.1,
     destroying: false,
   });
 };
@@ -191,7 +171,6 @@ const getComboText = () => {
 const loop = (t) => {
   if (!startTime) startTime = t;
 
-  // Calcul du spawn interval avec difficulté progressive
   const spawnInterval = Math.max(
     MIN_SPAWN_INTERVAL,
     BASE_SPAWN_INTERVAL - difficulty.value * 150
@@ -202,19 +181,16 @@ const loop = (t) => {
     lastSpawn = t;
   }
 
-  // Mise à jour des positions
   asteroids.value.forEach((a) => {
     if (!a.destroying) {
       a.y += a.speed;
     }
   });
 
-  // Augmentation de difficulté
   if (t - startTime > difficulty.value * DIFFICULTY_INTERVAL) {
     difficulty.value++;
   }
 
-  // Gestion des collisions avec le sol
   const hits = asteroids.value.filter(
     (a) => a.y > GROUND_LIMIT_Y && !a.destroying
   );
@@ -280,6 +256,20 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* --- RESET & BASE --- */
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+p,
+h1,
+h2 {
+  margin: 0;
+  padding: 0;
+}
+
 /* --- LAYOUT GLOBAL --- */
 .main-wrapper {
   width: 100vw;
@@ -343,7 +333,7 @@ onUnmounted(() => {
 }
 
 .side-panel h2 {
-  margin: 0 0 20px 0;
+  margin-bottom: 20px;
   text-align: center;
   color: #4a90e2;
   text-transform: uppercase;
@@ -424,6 +414,8 @@ onUnmounted(() => {
 .lives-icons {
   font-size: 1.8rem;
   margin-top: 5px;
+  display: flex;
+  gap: 5px;
 }
 
 .stats-box {
@@ -457,12 +449,21 @@ onUnmounted(() => {
   color: #666;
 }
 
+.controls-info p {
+  margin: 5px 0;
+}
+
 .tip {
   color: #4a90e2;
-  margin-top: 5px;
 }
 
 /* --- ASTÉROÏDES --- */
+.game-area {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
 .asteroid {
   position: absolute;
   width: 50px;
@@ -513,9 +514,16 @@ onUnmounted(() => {
   width: 70%;
 }
 
+.arena-modal h1 {
+  margin-bottom: 15px;
+}
+
+.arena-modal p {
+  margin: 10px 0;
+}
+
 .final-stats {
   color: #aaa;
-  margin: 10px 0;
 }
 
 .final-stats strong {
